@@ -1,38 +1,44 @@
 module Main exposing (..)
 
-import Html exposing (Html, button, div, program, text)
-import Html.Events exposing (onClick)
+import Html exposing (Html, program)
+import Widget
 
 
 -- モデル
 
 
-type alias Model =
-    Int
+type alias AppModel =
+    { widgetModel : Widget.Model
+    }
 
 
-init : ( Model, Cmd Msg )
+initialModel : AppModel
+initialModel =
+    { widgetModel = Widget.initialModel
+    }
+
+
+init : ( AppModel, Cmd Msg )
 init =
-    ( 0, Cmd.none )
+    ( initialModel, Cmd.none )
 
 
 
--- message
+-- メッセージ
 
 
 type Msg
-    = Increment Int
+    = WidgetMsg Widget.Msg
 
 
 
 -- VIEW
 
 
-view : Model -> Html Msg
+view : AppModel -> Html Msg
 view model =
-    div []
-        [ button [ onClick (Increment 2) ] [ text "+" ]
-        , text (toString model)
+    Html.div []
+        [ Html.map WidgetMsg (Widget.view model.widgetModel)
         ]
 
 
@@ -40,27 +46,31 @@ view model =
 -- 更新
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        Increment howMuch ->
-            ( model + howMuch, Cmd.none )
+update : Msg -> AppModel -> ( AppModel, Cmd Msg )
+update message model =
+    case message of
+        WidgetMsg subMsg ->
+            let
+                ( updateWidgetModel, widgetCmd ) =
+                    Widget.update subMsg model.widgetModel
+            in
+            ( { model | widgetModel = updateWidgetModel }, Cmd.map WidgetMsg widgetCmd )
 
 
 
--- 購読
+-- サブスクリプション（購読）
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions : AppModel -> Sub Msg
+subscriptions appModel =
     Sub.none
 
 
 
--- Main
+-- APP
 
 
-main : Program Never Model Msg
+main : Program Never AppModel Msg
 main =
     program
         { init = init
